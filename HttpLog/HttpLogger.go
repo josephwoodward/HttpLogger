@@ -8,7 +8,15 @@ import (
 	"time"
 )
 
+var logDir = "./"
+
+const LogFilename = "http_logger.log"
+
 func handler(w http.ResponseWriter, request *http.Request) {
+
+	if request.URL.Path[0:] == "/favicon.ico" {
+		return
+	}
 
 	requestDump, err := httputil.DumpRequest(request, true)
 	if err != nil {
@@ -17,11 +25,11 @@ func handler(w http.ResponseWriter, request *http.Request) {
 
 	fmt.Println(string(requestDump))
 
-	f, err := os.Create("requestlog.log")
+	f, err := os.Create(logDir + LogFilename)
 	check(err)
 	defer f.Close()
 
-	x, err := f.Write([]byte("============== Request Begin ( " + time.Now().String() + ") ==============\n"))
+	x, err := f.Write([]byte("============== Request Begin ( " + time.Now().String() + ") ==============\n\n"))
 	_ = x
 	check(err)
 
@@ -42,9 +50,14 @@ func check(e error) {
 	}
 }
 
-func Log(port string) {
-	//fmt.Println("Listening on port " + port)
+func Log(options ConfigurationOptions) {
+	//if options.RunAsDetached {
+	//	fmt.Println("Detaching and listening on port " + options.Port)
+	//}
+	fmt.Println("Listening on port " + options.Port)
+
+	logDir = options.LogDir
 
 	http.HandleFunc("/", handler)
-	http.ListenAndServe(":"+port, nil)
+	http.ListenAndServe(":"+options.Port, nil)
 }
